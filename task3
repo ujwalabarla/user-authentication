@@ -1,0 +1,40 @@
+const users = [
+    { id: 1, username: 'user1', password: 'password1', name: 'User One', role: 'user' },
+    { id: 2, username: 'user2', password: 'password2', name: 'User Two', role: 'user' },
+    { id: 3, username: 'admin', password: 'admin123', name: 'Admin User', role: 'admin' }
+];
+// Dashboard route
+app.get('/dashboard', authorize(['user', 'admin']), (req, res) => {
+    res.send('Dashboard page');
+});
+
+// Authorization middleware
+function authorize(roles) {
+    return (req, res, next) => {
+        const user = users.find(u => u.id === req.userId);
+
+        if (!user || !roles.includes(user.role)) {
+            return res.status(403).send('Forbidden');
+        }
+
+        next();
+    };
+}
+// Admin route
+app.get('/admin', authorize(['admin']), (req, res) => {
+    res.send('Admin page');
+});
+// Login route
+app.post('/login', (req, res) => {
+    const { username, password } = req.body;
+    const user = users.find(u => u.username === username && u.password === password);
+
+    if (user) {
+        // Authentication successful, set userId in request object
+        req.userId = user.id;
+        res.redirect('/dashboard');
+    } else {
+        // Authentication failed, display error message
+        res.status(401).send('Invalid username or password');
+    }
+});
